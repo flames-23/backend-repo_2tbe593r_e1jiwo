@@ -1,48 +1,95 @@
 """
-Database Schemas
+Database Schemas for the matchmaking app
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model maps to a MongoDB collection (lowercased class name).
 """
-
+from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
-from typing import Optional
+from datetime import date
 
-# Example schemas (replace with your own):
+Religion = Literal[
+    "Islam", "Katolik", "Protestan", "Hindu", "Budha", "Khonghucu", "Agnostik", "Lainnya"
+]
+Religiosity = Literal["tidak menjalankan", "moderat", "strict"]
+MaritalStatus = Literal["lajang", "duda", "janda"]
+YesNo = Literal["ya", "tidak"]
+LifestyleSmoking = Literal["tidak", "kadang", "sering"]
+LifestyleAlcohol = Literal["tidak", "sosial", "sering"]
+Diet = Literal["bebas", "vegetarian", "vegan", "halal", "lainnya"]
+PhysicalActivity = Literal["rendah", "sedang", "tinggi"]
+SleepHabit = Literal["malam", "pagi", "fleksibel"]
+TimeManagement = Literal["terencana", "spontan", "campuran"]
+ShoppingHabit = Literal["hemat", "moderat", "boros"]
+
+class Lifestyle(BaseModel):
+    merokok: LifestyleSmoking = Field(default="tidak")
+    alkohol: LifestyleAlcohol = Field(default="tidak")
+    pola_makan: Diet = Field(default="bebas")
+    aktivitas_fisik: PhysicalActivity = Field(default="sedang")
+    kebiasaan_tidur: SleepHabit = Field(default="fleksibel")
+    pengelolaan_waktu: TimeManagement = Field(default="campuran")
+    kebiasaan_belanja: ShoppingHabit = Field(default="moderat")
+
+class SocialLinks(BaseModel):
+    instagram: Optional[str] = None
+    facebook: Optional[str] = None
+    twitter: Optional[str] = None
+    linkedin: Optional[str] = None
+    tiktok: Optional[str] = None
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    email: str = Field(..., description="Email (used only for login/payment record)")
+    name: str
+    tanggal_lahir: date
+    status: MaritalStatus
+    agama: Religion
+    level_agama: Religiosity
+    suku: Optional[str] = None
+    hobi: List[str] = Field(default_factory=list)
+    tinggi_cm: Optional[int] = Field(default=None, ge=50, le=250)
+    berat_kg: Optional[int] = Field(default=None, ge=20, le=300)
+    berkacamata: Optional[bool] = None
+    alamat_asli: Optional[str] = None
+    alamat_domisili: Optional[str] = None
+    jumlah_saudara: Optional[int] = Field(default=None, ge=0, le=20)
+    kondisi_keluarga: Optional[str] = None
+    riwayat_penyakit: Optional[str] = None
+    pekerjaan: Optional[str] = None
+    usaha_sampingan: Optional[str] = None
+    pendapatan_per_bulan: Optional[int] = Field(default=None, ge=0)
+    pendidikan: Optional[str] = None
+    bahasa: List[str] = Field(default_factory=list)
+    rencana_anak: Optional[str] = None
+    love_language: Optional[str] = None
+    lifestyle: Lifestyle = Field(default_factory=Lifestyle)
+    social: SocialLinks = Field(default_factory=SocialLinks)
+    kota: Optional[str] = None
+    foto_url: Optional[str] = None
+    verified: bool = False
+    approved: bool = False
+    liked_user_ids: List[str] = Field(default_factory=list)
+    matches: List[str] = Field(default_factory=list)
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Like(BaseModel):
+    from_user_id: str
+    to_user_id: str
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Message(BaseModel):
+    match_id: str
+    sender_id: str
+    text: str
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class AdminAction(BaseModel):
+    user_id: str
+    action: Literal["approve", "reject", "verify", "unverify"]
+
+class SearchQuery(BaseModel):
+    usia_min: Optional[int] = None
+    usia_max: Optional[int] = None
+    lokasi: Optional[str] = None
+    agama: Optional[Religion] = None
+    level_agama: Optional[Religiosity] = None
+    pekerjaan: Optional[str] = None
+    pendapatan_min: Optional[int] = None
+    pendidikan: Optional[str] = None
+    lifestyle: Optional[Lifestyle] = None
